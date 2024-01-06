@@ -1,0 +1,1069 @@
+ <<<...*PROJECT 2*....>>>
+
+  <<...Online_Food_Delivery_App...>>
+                                     ---Vallu.Vijaya(21EM5A0513), (Cse)
+                                           Role(Java Microservices)
+  
+*^DEVICES & OS SPECIFICATIONS^*
+Device name	DESKTOP-GMF4H1F
+Processor	Intel(R) Core(TM) i3-1005G1 CPU @ 1.20GHz   1.19 GHz
+Installed RAM	4.00 GB (3.80 GB usable)
+Device ID	9D82C221-2DD1-474D-8B22-A7489ED7E06F
+Product ID	00330-80000-00000-AA776
+System type	64-bit operating system, x64-based processor
+Pen and touch	No pen or touch input is available for this display
+
+    *^REQUIREMENTS^* :
+
+--> Java 17
+-->Visual code
+--> Spring Tool Suite
+-->postman
+  
+
+*^CREATING A SPRING STARTER PROJECT^* :
+
+-->Project name- Food_Delivery_App
+-->Root package name- com.vijju
+-->Project type- Maven
+-->Packing- JAR
+-->Language: Java
+-->Java version: 17
+-->Spring Boot Version: 3.2.1
+
+ *^DEPENDENCIES^* :
+-->Lombok
+-->Spring web
+-->Spring Data JPA
+-->MySQL Driver
+-->Converting application.properties file and adding the required credentials(DB_Name, username in mysql,,DB_password) to integrate our spring application to the database.
+*^CONFIGURE DATABASE CONNECTION:
+
+server:
+  port: 9090
+
+spring:
+  datasource:
+    username: root
+    password: Vijaya@121
+    url: jdbc:mysql://localhost:3306/foodapp
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+      format_sql: true
+
+
+-->creating a model package in the src/main/java
+-->in the model package I am creating a classes for representing the structure of data in my application.
+............................................................................................................................................................................................
+      
+ Create a Folder "Auth controller"
+ ------Login Controller----
+package com.foodapp.authcontroller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.foodapp.authexceptions.AuthorizationException;
+import com.foodapp.authmodels.LogInModel;
+import com.foodapp.authservice.LogInModelServiceImpl;
+
+@RestController
+public class LoginController {
+	
+	@Autowired
+	private LogInModelServiceImpl loginService;
+	
+	@PostMapping("/login")
+	public String loginHandler(@RequestBody LogInModel loginData) throws AuthorizationException {
+		return loginService.LogIn(loginData);
+	}
+	
+	@PatchMapping("/logout")
+	public String logOutFromAccount(@RequestParam String key) throws AuthorizationException
+	{
+		return loginService.LogOut(key);
+	}
+	
+
+}
+
+-----Signup Controller-----
+package com.foodapp.authcontroller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.foodapp.authexceptions.AuthorizationException;
+import com.foodapp.authmodels.SignUpModel;
+import com.foodapp.authservice.SignUpModelService;
+
+@RestController
+public class SignUpController {
+	
+	@Autowired
+	private SignUpModelService signUpService;
+	
+	@PostMapping("/signUp")
+	public ResponseEntity<SignUpModel> createNewSignUpHandler(@RequestBody SignUpModel newSignUp) throws AuthorizationException {
+		
+		SignUpModel newSignedUp =signUpService.newSignUp(newSignUp);
+		return new ResponseEntity<SignUpModel>(newSignedUp,HttpStatus.CREATED);
+
+	}
+	
+	
+	@PutMapping("/updateSignUp")
+	public ResponseEntity<SignUpModel> updateSignUpDetailsHandler(@RequestBody SignUpModel signUp, @RequestParam String key) throws AuthorizationException
+	{
+		SignUpModel newUpdatedSignUp = signUpService.updateSignUp(signUp,key);
+		
+		return new ResponseEntity<SignUpModel>(newUpdatedSignUp,HttpStatus.ACCEPTED);
+		
+	
+	}
+
+}
+
+Create a Folder "AuthModel"
+-----Login Model.java----
+package com.foodapp.authmodels;
+
+import jakarta.annotation.Nonnull;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Entity
+public class LogInModel {
+	
+	@Id
+	@Nonnull
+	private Integer userId;
+	
+	private String userName;
+	private String password;
+
+}
+
+----SignUp.java---
+package com.foodapp.authmodels;
+
+import com.foodapp.model.GeneratedValue;
+
+import jakarta.annotation.Nonnull;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Inheritance(strategy=InheritanceType.JOINED)
+@Table(name="users")
+@Entity
+public class SignUpModel {
+	
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	private Integer userId;
+
+
+	@Nonnull
+	@Pattern(regexp="[a-zA-Z]{5,15}", message = "Username must be of length 5-15 alphabetical characters")
+	private String userName;
+
+	@Nonnull
+	@Pattern(regexp="[a-zA-Z0-9]{5,20}", message="Password must be of length 5-20 alphanumeric characters")
+	private String password;
+
+	@Nonnull
+	@Pattern(regexp="[0-9]{10}", message = "Mobile number must be of 10 digits")
+	private String mobileNo;
+
+	@Nonnull
+	@email
+	private String email;
+
+}
+
+---UsserSection.java---
+package com.foodapp.authmodels;
+
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString
+@Entity
+public class UserSession {
+	
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	private Integer id;
+	
+	@Column(unique =  true)
+	private Integer userId;
+	private String UUID;
+	private LocalDateTime timeStamp;
+
+	
+	public UserSession(Integer userId, String uuid, LocalDateTime localDateTime) {
+		super();
+		this.userId = userId;
+		this.UUID = uuid;
+		this.timeStamp = localDateTime;
+	}
+	
+
+}
+
+  Create A folder name "controller" 
+-----Bill Service Control.java---
+
+package com.foodapp.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.foodapp.exceptions.BillException;
+import com.foodapp.exceptions.CustomerException;
+import com.foodapp.exceptions.ItemException;
+import com.foodapp.model.Bill;
+import com.foodapp.service.BillService;
+
+@RestController
+@RequestMapping("/bill")
+public class BillServiceController {
+	
+	@Autowired
+	BillService billService;
+	
+	
+	@PostMapping("/add")
+	public ResponseEntity<Bill> generateBill(@RequestBody Bill bill) throws BillException {
+		Bill myBill = billService.addBill(bill);
+		return new ResponseEntity<Bill>(myBill, HttpStatus.CREATED);
+
+	}
+	
+	@PutMapping("/update")
+	public ResponseEntity<Bill> updateBill(@RequestBody Bill bill) throws BillException {
+		Bill myBill = billService.updateBill(bill);
+		return new ResponseEntity<Bill>(myBill, HttpStatus.ACCEPTED);
+
+	}
+
+	@DeleteMapping("/remove/{billId}")
+	public ResponseEntity<Bill> removeBill(@PathVariable("billId") Integer billId ) throws BillException{
+		Bill removedBill = billService.removeBill(billId);
+		return new ResponseEntity<Bill>(removedBill, HttpStatus.OK);
+	}
+	
+	@GetMapping("/view/{billId}")
+	public ResponseEntity<Bill> viewBill(@PathVariable("billId") Integer billId) throws BillException{
+		Bill bill = billService.viewBill(billId);
+		return new ResponseEntity<Bill>(bill, HttpStatus.ACCEPTED);
+	}
+	
+	
+	@GetMapping("/viewtotal/{customerId}")
+	public ResponseEntity<String> getTotalByCustomerId(@PathVariable("customerId") Integer customerId) throws ItemException, CustomerException{
+		String total = billService.generateTotalBillById(customerId);
+		return new ResponseEntity<String>(total, HttpStatus.OK);
+	}
+
+}
+---categories Service.java---
+package com.foodapp.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.foodapp.exceptions.CategoryException;
+import com.foodapp.model.Category;
+import com.foodapp.service.CategoryService;
+
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+
+@RestController
+@RequestMapping("/category")
+public class CategoryServiceController {
+	
+	@Autowired
+	CategoryService catService;
+	
+	
+	@PostMapping("/add")
+	public ResponseEntity<Category> addCategory(@RequestBody Category category) throws CategoryException{
+		Category newCategory = catService.addCategory(category);
+		return new ResponseEntity<Category>(newCategory, HttpStatus.CREATED); 
+	}
+	
+	@PutMapping("/update")
+	public ResponseEntity<Category> updateCategory(@RequestBody Category category) throws CategoryException{
+		Category updatedCategory = catService.updateCategory(category);
+		return new ResponseEntity<Category>(updatedCategory, HttpStatus.ACCEPTED);
+	}
+	
+	@GetMapping("/view/{categoryId}")
+	public ResponseEntity<Category> getCategory(@PathVariable("categoryId") Integer categoryId) throws CategoryException{
+		Category category = catService.viewCategory(categoryId);
+		return new ResponseEntity<Category>(category, HttpStatus.OK);
+	}
+	
+	
+	@DeleteMapping("/remove/{categoryId}")
+	public ResponseEntity<Category> removeCategory(@PathVariable("categoryId") Integer categoryId) throws CategoryException{
+		Category removedCategory = catService.removeCategory(categoryId);
+		return new ResponseEntity<Category>(removedCategory, HttpStatus.OK);
+	}
+	
+	
+	@GetMapping("/viewall")
+	public ResponseEntity<List<Category>> getAllCategories() throws CategoryException{
+		List<Category> categories = catService.viewAllCategory();
+		return new ResponseEntity<List<Category>>(categories, HttpStatus.OK);
+	}
+	
+
+}
+  --- Custonmmer Service.java---
+package com.foodapp.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.foodapp.exceptions.CustomerException;
+import com.foodapp.model.Customer;
+import com.foodapp.service.CustomerService;
+
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+
+@RestController
+@RequestMapping("/customer")
+public class CustomerServiceController {
+	
+	@Autowired
+	CustomerService customerService;
+	
+	
+	@PostMapping("/add")
+	public ResponseEntity<Customer> addCustomer(@RequestBody Customer customer) throws CustomerException{
+		 Customer newCustomer = customerService.addCustomer(customer);
+		 return new ResponseEntity<Customer>(newCustomer, HttpStatus.CREATED);
+	}
+	
+	
+	@PutMapping("/update")
+	public ResponseEntity<Customer> updateCustomer(@RequestBody Customer customer) throws CustomerException{
+		 Customer updatedCustomer = customerService.updateCustomer(customer);
+		 return new ResponseEntity<Customer>(updatedCustomer, HttpStatus.ACCEPTED);
+	}
+	
+	
+	@DeleteMapping("/remove/{customerId}")
+	public ResponseEntity<Customer> removeCustomer(@PathVariable("customerId") Integer customerId) throws CustomerException{
+		 Customer removedCustomer = customerService.removeCustomerById(customerId);
+		 return new ResponseEntity<Customer>(removedCustomer, HttpStatus.OK);
+	}
+	
+	
+	@GetMapping("/view/{customerId}")
+	public ResponseEntity<Customer> viewCustomer(@PathVariable("customerId") Integer customerId) throws CustomerException{
+		 Customer customer = customerService.viewCustomer(customerId);
+		 return new ResponseEntity<Customer>(customer, HttpStatus.OK);
+	}
+
+}
+   ---Food Cart Service .java---
+package com.foodapp.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.foodapp.authexceptions.AuthorizationException;
+import com.foodapp.authservice.UserSessionService;
+import com.foodapp.exceptions.CartException;
+import com.foodapp.exceptions.ItemException;
+import com.foodapp.model.FoodCart;
+import com.foodapp.service.FoodCartService;
+
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+
+@RestController
+@RequestMapping("/cart")
+public class FoodCartServiceController {
+	
+	@Autowired
+	FoodCartService cartService;
+	
+	@Autowired
+	UserSessionService userSessionService;
+	
+	
+	@PostMapping("/register")
+	public ResponseEntity<FoodCart> saveCartDetails(@RequestParam String key,@RequestBody FoodCart fc) throws CartException, AuthorizationException
+	{
+				Integer sessionId = userSessionService.getUserSessionId(key);
+				
+				if(fc!=null && sessionId != null) {
+	            FoodCart f= cartService.saveCart(fc);
+	            	return new ResponseEntity<FoodCart>(f,HttpStatus.CREATED);
+	            }
+	            throw new CartException();
+	}
+	
+	
+	@PutMapping("/add/{cartId}/{itemId}")
+	public ResponseEntity<FoodCart> addItemToCart(@PathVariable("cartId") Integer cartId, @PathVariable("itemId") Integer itemId) throws CartException, ItemException{
+		FoodCart updatedCart = cartService.addItem(cartId, itemId);
+		return new ResponseEntity<FoodCart>(updatedCart, HttpStatus.ACCEPTED);
+	}
+	
+	
+	@DeleteMapping("/remove/{cartId}")
+	public ResponseEntity<FoodCart> removeCart(@PathVariable("cartId") Integer cartId) throws CartException{
+		FoodCart removedCart = cartService.clearCart(cartId);
+		return new ResponseEntity<FoodCart>(removedCart, HttpStatus.OK);
+	}
+	
+	
+	@GetMapping("/view/{cartId}")
+	public FoodCart getCartByCartId(@PathVariable ("cartId") Integer cartId,@RequestParam String key) throws AuthorizationException, CartException{
+		
+		Integer sessionId = userSessionService.getUserSessionId(key);
+		if(sessionId != null)
+			return cartService.viewCart(cartId);
+		else
+			 throw new CartException();
+			
+	}
+
+}
+ ---ItemService.java---
+package com.foodapp.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.foodapp.exceptions.ItemException;
+import com.foodapp.model.Item;
+import com.foodapp.service.ItemService;
+
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+
+@RestController
+@RequestMapping("/item")
+public class ItemServiceController {
+	
+	@Autowired
+	ItemService itemService;
+	
+	
+	@PostMapping("/add")
+	public ResponseEntity<Item> addItem(@RequestBody Item item) throws ItemException{
+		Item newItem = itemService.addItem(item);
+		return new ResponseEntity<Item>(newItem, HttpStatus.CREATED);
+	}
+	
+	@PutMapping("/update")
+	public ResponseEntity<Item> updateItem(@RequestBody Item item) throws ItemException{
+		Item updatedItem = itemService.updateItem(item);
+		return new ResponseEntity<Item>(updatedItem, HttpStatus.OK);
+	}
+	
+	@GetMapping("/view/{itemId}")
+	public ResponseEntity<Item> getItem(@PathVariable("itemId") Integer itemId) throws ItemException{
+		Item item = itemService.viewItem(itemId);
+		return new ResponseEntity<Item>(item, HttpStatus.ACCEPTED);
+	}
+	
+	@DeleteMapping("/remove/{itemId}")
+	public ResponseEntity<Item> removeItem(@PathVariable("itemId") Integer itemId) throws ItemException{
+		Item removedItem = itemService.removeItem(itemId);
+		return new ResponseEntity<Item>(removedItem, HttpStatus.ACCEPTED);
+	}
+
+	
+	@GetMapping("/viewall")
+	public ResponseEntity<List<Item>> getAllItems() throws ItemException{
+		List<Item> items = itemService.viewAllItems();
+		return new ResponseEntity<List<Item>>(items, HttpStatus.OK);
+		
+	}
+}
+ ---orderDetailes.java---
+package com.foodapp.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.foodapp.authexceptions.AuthorizationException;
+import com.foodapp.authservice.UserSessionService;
+//import com.foodapp.authexceptions.AuthorizationException;
+//import com.foodapp.authservice.UserSessionService;
+import com.foodapp.exceptions.CustomerException;
+import com.foodapp.exceptions.OrderException;
+import com.foodapp.model.Item;
+import com.foodapp.model.OrderDetails;
+import com.foodapp.service.OrderDetailService;
+
+@RestController
+@RequestMapping("/order")
+public class OrderDetailServiceController {
+	
+	@Autowired
+	OrderDetailService orderService;
+	
+	@Autowired
+	UserSessionService userSessionService;
+	
+	
+	
+	 @PostMapping("/save")
+     public ResponseEntity<OrderDetails> saveOrder(@RequestBody OrderDetails order, @RequestParam String key) throws OrderException, AuthorizationException{
+     	
+     	Integer sessionId = userSessionService.getUserSessionId(key);
+     	
+     	if(sessionId != null)
+     		return new ResponseEntity<OrderDetails>(orderService.addOrder(order), HttpStatus.CREATED);
+     	else
+     		throw new OrderException();
+     }
+	 
+	 
+	 @PutMapping("/update")
+     public ResponseEntity<OrderDetails> updateOrder(@RequestBody OrderDetails order, @RequestParam String key) throws OrderException, AuthorizationException{
+         
+     	Integer sessionId = userSessionService.getUserSessionId(key);
+     	
+     	if(sessionId != null)
+     		return new ResponseEntity<OrderDetails>(orderService.updateOrder(order), HttpStatus.ACCEPTED);
+     	else
+     		throw new OrderException();
+     		
+     }
+	 
+	 
+	 @DeleteMapping("/remove/{orderId}")
+     public ResponseEntity<OrderDetails> deleteOrder(@PathVariable("orderId") Integer orderId , @RequestParam String key) throws OrderException, AuthorizationException{
+     	
+     	Integer sessionId = userSessionService.getUserSessionId(key);
+     	
+     	if(sessionId != null) 
+     		return new ResponseEntity<OrderDetails>(orderService.removeOrder(orderId), HttpStatus.ACCEPTED);
+     	
+     	else
+     		throw new OrderException();
+     }
+	 
+	 @GetMapping("/view/{orderId}")
+     public ResponseEntity<OrderDetails> viewOrder(@PathVariable("orderId") Integer orderId,@RequestParam String key) throws OrderException, AuthorizationException{
+     	
+     	Integer sessionId = userSessionService.getUserSessionId(key);
+     	
+     	if(sessionId != null)
+     		return  new ResponseEntity<OrderDetails>(orderService.viewOrder(orderId),HttpStatus.FOUND);
+     	else
+     		throw new OrderException();
+     }
+	 
+	 
+	 @GetMapping("/viewbycustomer/{customerId}")
+     public ResponseEntity<List<Item>> viewAllOrders(@PathVariable("customerId") Integer customerId,@RequestParam String key) throws OrderException, CustomerException, AuthorizationException{
+     	
+     	Integer sessionId = userSessionService.getUserSessionId(key);
+     	
+     	if(sessionId != null)
+     		return  new ResponseEntity<List<Item>>(orderService.viewAllOrdersByCustomer(customerId), HttpStatus.FOUND);
+     	else
+     		throw new OrderException();
+     }
+
+}
+ 
+---Restaurant.java---
+package com.foodapp.controller;
+
+import javax.validation.Valid;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.foodapp.authexceptions.AuthorizationException;
+import com.foodapp.authservice.UserSessionService;
+//import com.foodapp.authexceptions.AuthorizationException;
+//import com.foodapp.authservice.UserSessionService;
+import com.foodapp.exceptions.RestaurantException;
+import com.foodapp.model.Restaurant;
+import com.foodapp.service.RestaurantService;
+
+@RestController
+@RequestMapping("/restaurant")
+public class RestaurantServiceController {
+	
+	@Autowired
+	RestaurantService restService;
+	
+	@Autowired
+	UserSessionService userSessionService;
+	
+	
+	
+	@PostMapping("/add")
+	public ResponseEntity<Restaurant> saveResturant(@Valid @RequestBody Restaurant restaurant) throws RestaurantException {
+		
+		Restaurant newRestaurant = restService.addRestaurant(restaurant);
+		
+		return new ResponseEntity<Restaurant>(newRestaurant ,HttpStatus.CREATED);
+	}
+	
+	
+	@PutMapping("/update")
+	public ResponseEntity<Restaurant> updateResturant(@Valid @RequestBody Restaurant restaurant) throws RestaurantException{
+		
+		Restaurant updatedResturant=restService.updateRestaurant(restaurant);
+		
+		return new ResponseEntity<Restaurant>(updatedResturant,HttpStatus.ACCEPTED);
+	}
+	
+	
+	@DeleteMapping("/remove/{restaurantId}")
+	public ResponseEntity<Restaurant> deleteRestaurant(@PathVariable("restaurantId") Integer restaurantId) throws RestaurantException{
+		Restaurant removedRestaurant = restService.removeRestaurant(restaurantId);
+		return new ResponseEntity<Restaurant>(removedRestaurant, HttpStatus.OK);
+	}
+	
+	
+	@GetMapping("/view/{restaurantId}")
+	public ResponseEntity<Restaurant> getByResturantId(@PathVariable ("restaurantId") Integer restaurantId ,@RequestParam String key) throws RestaurantException, AuthorizationException{
+		
+		Integer sessionId = userSessionService.getUserSessionId(key);
+    	
+    	if(sessionId != null)
+    		{	Restaurant restaurant =restService.viewRestaurant(restaurantId);	
+    			return new ResponseEntity<Restaurant>(restaurant ,HttpStatus.ACCEPTED);
+    		}
+    	else
+    		throw new RestaurantException();
+	}
+
+}
+
+Create A Folder name "Model"
+---Addre.java--
+package com.foodapp.model;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString
+@Entity
+public class Address {
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO)
+	private Integer addressId;
+	private String area;
+	private String city;
+	private String state;
+	private String country;
+	private String pincode;
+}
+
+---bill.java--
+package com.foodapp.model;
+
+import java.time.LocalDateTime;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString
+@Entity
+public class Bill {
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO)
+	private Integer billId;
+	private LocalDateTime billDate;
+	private Double totalCost;
+	private Integer totalItem;
+	
+	
+	@OneToOne(cascade = CascadeType.ALL)
+	private OrderDetails order;
+	
+}
+
+--Category.java--
+package com.foodapp.model;
+
+import javax.persistence.Entity;
+import javax.persistence.Id;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Entity
+public class Category {
+	
+	@Id
+	private Integer categoryId;
+	private String categoryName;
+
+}
+
+---Customer .java---
+package com.foodapp.model;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.OneToOne;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString
+@Entity
+public class Customer {
+	
+	
+	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO)
+	private Integer customerId;
+	private String fullName;
+	private Integer age;
+	private String gender;
+	private String mobileNumber;
+	private String email;
+	
+	
+	@OneToOne(cascade = CascadeType.ALL)
+	private Address address;
+	
+	
+	@OneToOne(cascade = CascadeType.ALL)
+	@JsonIgnore
+	private FoodCart foodCart;
+}
+
+ ---Foodcart.java--
+package com.foodapp.model;
+
+import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString
+@Entity
+public class FoodCart {
+	
+	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO)
+	private Integer cartId;
+	
+	@OneToOne(cascade = CascadeType.ALL)
+	@JsonIgnore
+	private Customer customer;
+	
+	
+	@OneToMany(targetEntity = Item.class,cascade = CascadeType.ALL)
+	private List<Item> itemList;
+
+
+
+}
+---Item.java--
+package com.foodapp.model;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.OneToOne;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString
+@Entity
+public class Item{
+	
+	
+	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO)
+	private Integer itemId;
+	private String itemName;
+	private Integer quantity;
+	private Double cost;
+	
+//	@Embedded
+	@OneToOne(cascade = CascadeType.ALL)
+	private Category category;
+}
+---OrderDetailes.java---
+package com.foodapp.model;
+
+import java.time.LocalDateTime;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.OneToOne;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString
+@Entity
+public class OrderDetails {
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO)
+	private Integer orderId;
+	private LocalDateTime orderDate;
+	private String orderStatus;
+	
+	
+	@OneToOne(cascade = CascadeType.ALL)
+	@JsonIgnore
+	private FoodCart cart;
+	
+	
+	@OneToOne(cascade = CascadeType.ALL)
+	@JsonIgnore
+	private  Bill bill;
+}
+
+----Restaurant.java---
+package com.foodapp.model;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString
+@Entity
+public class Restaurant {
+	
+	
+	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO)
+	private Integer restaurantId;
+	private String restaurantName;
+	private String managerName;
+	private String contactNumber;
+	
+	
+	@JsonIgnore
+	@OneToOne(cascade = CascadeType.ALL)
+	private Address address;
+	
+	@OneToMany(targetEntity = Item.class,cascade = CascadeType.ALL)
+	private List<Item> itemList = new ArrayList<>();
+}
+
+-----POstman---
+-->Testing CRUD Operations with Postman
+
+
+@GetMapping:(Read Operation)
+•  This annotation here it retrives all the restaurant data ,,, this is the URL: " http://localhost:9090/Bill/add/restaurant/id "
+
+ @PostMapping:(Create Operation)
+ This annotation used for adding a new  studnt "http://localhost:9192/Bill/Add/restaurant/id"
+
+
+@PutMapping:(Update Operation )
+
+ This annotation maps the HTTP PUT request to the "http://localhost:9192/restaurant/update/33" URI. It is used for updating restaurant detailes ..
+
+@DeleteMapping:(Delete Operation)
+
+ This Annotation used for deleting a Customer based on their Id ......http://localhost:9192/restaurant/delete/{id} wwhere {id} is the ID of the restaurant to be deleted
+
+            --------Thank You-----
